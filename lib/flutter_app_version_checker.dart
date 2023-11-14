@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:math' as math;
 
+import 'package:flutter_app_version_checker/utils/itunes_country_code.dart';
 import 'package:http/http.dart' as http;
 import 'package:package_info_plus/package_info_plus.dart';
 
@@ -22,10 +23,15 @@ class AppVersionChecker {
   /// default will be `AndroidStore.GooglePlayStore`
   final AndroidStore androidStore;
 
+  /// If the iOS app is not available in the US app store you must specify the country the app is available in
+  /// if [itunesCountryCode] is null the query will default to US
+  final ItunesCountryCode? itunesCountryCode;
+
   AppVersionChecker({
     this.currentVersion,
     this.appId,
     this.androidStore = AndroidStore.googlePlayStore,
+    this.itunesCountryCode,
   });
 
   Future<AppCheckerResult> checkUpdate() async {
@@ -52,8 +58,14 @@ class AppVersionChecker {
     String? errorMsg;
     String? newVersion;
     String? url;
-    var uri =
-        Uri.https("itunes.apple.com", "/lookup", {"bundleId": packageName});
+
+    String path;
+    if (itunesCountryCode != null) {
+      path = '${itunesCountryCode!.value}/lookup';
+    } else {
+      path = '/lookup';
+    }
+    var uri = Uri.https("itunes.apple.com", path, {"bundleId": packageName});
     try {
       final response = await http.get(uri);
       if (response.statusCode != 200) {
